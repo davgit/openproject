@@ -46,10 +46,10 @@ describe 'index users', type: :feature do
       index_page.expect_listed(current_user, a_user, b_user, z_user)
 
       index_page.order_by('First name')
-      index_page.expect_order(current_user, a_user, b_user, z_user)
+      index_page.expect_order(a_user, current_user, b_user, z_user)
 
       index_page.order_by('First name')
-      index_page.expect_order(z_user, b_user, a_user, current_user)
+      index_page.expect_order(z_user, b_user, current_user, a_user)
 
       index_page.order_by('Last name')
       index_page.expect_order(current_user, z_user, b_user, a_user)
@@ -62,8 +62,8 @@ describe 'index users', type: :feature do
   describe 'with some more status users' do
     shared_let(:anonymous) { FactoryBot.create :anonymous }
     shared_let(:active_user) { FactoryBot.create :user, created_at: 1.minute.ago }
-    shared_let(:registered_user) { FactoryBot.create :user, status: User::STATUSES[:registered] }
-    shared_let(:invited_user) { FactoryBot.create :user, status: User::STATUSES[:invited] }
+    shared_let(:registered_user) { FactoryBot.create :user, status: :registered }
+    shared_let(:invited_user) { FactoryBot.create :user, status: :invited }
 
     it 'shows the users by status and allows status manipulations',
        with_settings: { brute_force_block_after_failed_logins: 5,

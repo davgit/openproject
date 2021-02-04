@@ -1,3 +1,5 @@
+#-- encoding: UTF-8
+
 #-- copyright
 # OpenProject is an open source project management software.
 # Copyright (C) 2012-2021 the OpenProject GmbH
@@ -25,54 +27,27 @@
 #
 # See docs/COPYRIGHT.rdoc for more details.
 #++
-#
-# Kudos to https://forum.shakacode.com/t/how-to-test-file-downloads-with-capybara/347 from
-# where this code was adapted
 
-module DownloadedFile
-  PATH = Rails.root.join('tmp/test/downloads')
+# Returns principals whose
+# * login
+# * firstname
+# * lastname
+# matches the provided string
+module Principals::Scopes
+  class Like
+    def self.fetch(search_string)
+      firstnamelastname = "((firstname || ' ') || lastname)"
+      lastnamefirstname = "((lastname || ' ') || firstname)"
 
-  extend self
+      s = "%#{search_string.to_s.downcase.strip.tr(',', '')}%"
 
-  def downloads
-    Dir[PATH.join("*")]
-  end
-
-  def download
-    downloads.first
-  end
-
-  def download_content(ensure_content = true)
-    wait_for_download
-    wait_for_download_content if ensure_content
-    File.read(download)
-  end
-
-  def wait_for_download
-    Timeout.timeout(Capybara.default_max_wait_time) do
-      sleep 0.1 until downloaded?
+      Principal
+        .where(['LOWER(login) LIKE :s OR ' +
+                "LOWER(#{firstnamelastname}) LIKE :s OR " +
+                "LOWER(#{lastnamefirstname}) LIKE :s OR " +
+                'LOWER(mail) LIKE :s',
+             { s: s }])
+        .order(:type, :login, :lastname, :firstname, :mail)
     end
-  end
-
-  def wait_for_download_content
-    Timeout.timeout(Capybara.default_max_wait_time) do
-      sleep 0.1 until has_content?
-    end
-  end
-
-  def downloaded?
-    !downloading? && downloads.any?
-  end
-
-  def has_content?
-    !File.read(download).empty?
-  end
-
-  def downloading?
-    downloads.grep(/\.part$/).any?
-  end
-
-  def clear_downloads
-    FileUtils.rm_f(downloads)
   end
 end
